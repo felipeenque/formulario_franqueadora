@@ -7,11 +7,12 @@ import { Button } from "@/components/ui/button"
 import { MaskedInput } from "@/components/masked-input"
 import { CnpjMaskedInput } from "@/components/cnpj-masked-input"
 import { submitFranchisorForm } from "@/app/franchise/actions"
-import { Building, User, Mail, Briefcase, Phone, AlertCircle, CheckCircle, Landmark } from "lucide-react"
+import { Building, User, Mail, Briefcase, Phone, AlertCircle, CheckCircle, Landmark, CheckCircle2 } from "lucide-react"
 
 export function FranchisorForm() {
   const [state, setState] = useState<{ success: boolean; message: string } | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [formSubmittedSuccessfully, setFormSubmittedSuccessfully] = useState(false)
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -24,7 +25,13 @@ export function FranchisorForm() {
     try {
       const result = await submitFranchisorForm(formData)
       setState(result)
-      if (result.success) form.reset()
+      if (result.success) {
+        form.reset()
+        // Aguarda um momento para mostrar a mensagem de sucesso antes de trocar a tela
+        setTimeout(() => {
+          setFormSubmittedSuccessfully(true)
+        }, 1500)
+      }
     } catch (err) {
       console.error(err)
       setState({ success: false, message: "Erro inesperado. Tente novamente." })
@@ -33,6 +40,58 @@ export function FranchisorForm() {
     }
   }
 
+  // Se o formulário foi enviado com sucesso, mostra a mensagem de confirmação
+  if (formSubmittedSuccessfully) {
+    return (
+      <Card className="w-full max-w-2xl mx-auto bg-secondary/30 border border-border text-white backdrop-blur-sm shadow-2xl shadow-orange-900/10">
+        <CardContent className="p-12 text-center">
+          <div className="flex flex-col items-center space-y-6">
+            {/* Ícone de sucesso animado */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-green-500/20 rounded-full animate-ping"></div>
+              <div className="relative bg-green-500/10 rounded-full p-6 border-2 border-green-500">
+                <CheckCircle2 className="h-12 w-12 text-green-500" />
+              </div>
+            </div>
+            
+            {/* Título de sucesso */}
+            <h2 className="text-3xl font-bold text-white">
+              Formulário Enviado com Sucesso!
+            </h2>
+            
+            {/* Mensagem principal */}
+            <div className="space-y-4 max-w-md">
+              <p className="text-lg text-gray-200 leading-relaxed">
+                Recebemos suas informações e <span className="text-[#F9A51A] font-semibold">em breve um especialista entrará em contato</span> para seguir com o acesso à plataforma.
+              </p>
+              
+              <p className="text-sm text-gray-400">
+                Fique atento ao seu e-mail e telefone. Nossa equipe entrará em contato nas próximas 24 horas úteis.
+              </p>
+            </div>
+            
+            {/* Linha decorativa */}
+            <div className="w-24 h-1 bg-gradient-to-r from-[#F9A51A] to-[#F9821A] rounded-full"></div>
+            
+            {/* Call to action secundário */}
+            <p className="text-sm text-gray-300">
+              Enquanto isso, que tal conhecer mais sobre a Franchise Store?
+            </p>
+            
+            {/* Botão opcional para voltar ao site */}
+            <Button
+              onClick={() => window.location.href = '/'}
+              className="bg-gradient-to-r from-[#F9A51A] to-[#F9821A] text-stone-950 font-bold hover:opacity-90 transition-opacity"
+            >
+              Voltar ao Início
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  // Formulário normal
   return (
     <Card className="w-full max-w-2xl mx-auto bg-secondary/30 border border-border text-white backdrop-blur-sm shadow-2xl shadow-orange-900/10">
       <CardHeader className="text-center p-8">
@@ -171,7 +230,7 @@ export function FranchisorForm() {
             disabled={isSubmitting}
             className="w-full bg-gradient-to-r from-[#F9A51A] to-[#F9821A] text-stone-950 font-bold text-md h-14 disabled:opacity-70"
           >
-            {isSubmitting ? "Enviando..." : "Quero Expandir Minha Marca"}
+            {isSubmitting ? "Enviando..." : "Enviar cadastro"}
           </Button>
         </form>
       </CardContent>
