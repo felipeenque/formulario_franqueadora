@@ -69,22 +69,6 @@ export function FranchisorForm() {
                 Fique atento ao seu e-mail e telefone. Nossa equipe entrará em contato nas próximas 24 horas úteis.
               </p>
             </div>
-            
-            {/* Linha decorativa */}
-            <div className="w-24 h-1 bg-gradient-to-r from-[#F9A51A] to-[#F9821A] rounded-full"></div>
-            
-            {/* Call to action secundário */}
-            <p className="text-sm text-gray-300">
-              Enquanto isso, que tal conhecer mais sobre a Franchise Store?
-            </p>
-            
-            {/* Botão opcional para voltar ao site */}
-            <Button
-              onClick={() => window.location.href = '/'}
-              className="bg-gradient-to-r from-[#F9A51A] to-[#F9821A] text-stone-950 font-bold hover:opacity-90 transition-opacity"
-            >
-              Voltar ao Início
-            </Button>
           </div>
         </CardContent>
       </Card>
@@ -111,7 +95,7 @@ export function FranchisorForm() {
             <Input
               id="brandName"
               name="brandName"
-              placeholder="Ex: Kuri, Boutique do Sono, etc."
+              placeholder="Digite o nome da sua marca"
               required
               disabled={isSubmitting}
               className="bg-secondary/50 border border-border h-12 placeholder:text-gray-500 focus:ring-[#F9A51A] focus:border-[#F9A51A]"
