@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 2%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 2%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 2%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 0 0% 10%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 12%;
+    --input: 0 0% 12%;
+    --ring: 0 0% 83.1%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Add this custom style for the gradient background effect */
+.dark-gradient-background {
+  background-color: #080808;
+  background-image: radial-gradient(at 20% 20%, #1a1a1a1a 0, #0000 50%),
+    radial-gradient(at 80% 20%, #2222221a 0, #0000 50%), radial-gradient(at 20% 80%, #1515151a 0, #0000 50%),
+    radial-gradient(at 80% 80%, #2020201a 0, #0000 50%);
+}
+
+@media (max-width: 768px) {
+  .hero-title {
+    text-align: center;
+    line-height: 1;
+  }
+
+  .hero-subtitle {
+  text-align: center;
+  width: 100%;
+  }
+
+  .hero-description {
+  text-align: center;
+  }
+
+  .button-how {
+  width: 100%;
+  }
+
+  .hero-header {
+  justify-content: center;
+  }
+}
+
+/* Adicione no seu app/globals.css */
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-scroll {
+  animation: scroll 30s linear infinite;
+  width: max-content;
+}
+
+.animate-scroll:hover {
+  animation-play-state: paused;
+}
+
+/* Versão mobile mais rápida */
+@media (max-width: 768px) {
+  .animate-scroll {
+    animation: scroll 20s linear infinite;
+  }
+}
