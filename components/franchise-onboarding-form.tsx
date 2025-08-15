@@ -80,9 +80,6 @@ const mergeDeep = (target, ...sources) => {
 // Função melhorada para converter base64 de volta para File
 function base64ToFile(base64Data: string, fileName: string, mimeType: string): File | null {
   try {
-    console.log(`Converting base64 to file: ${fileName}, type: ${mimeType}`)
-    console.log(`Base64 data length: ${base64Data.length}`)
-    console.log(`Base64 preview: ${base64Data.substring(0, 50)}...`)
 
     // Verificar se o base64 é válido
     if (!base64Data || typeof base64Data !== "string") {
@@ -108,12 +105,6 @@ function base64ToFile(base64Data: string, fileName: string, mimeType: string): F
     const byteArray = new Uint8Array(byteNumbers)
     const file = new File([byteArray], fileName, { type: mimeType })
 
-    console.log(`File created successfully:`, {
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      lastModified: file.lastModified,
-    })
 
     return file
   } catch (error) {
@@ -127,23 +118,17 @@ function base64ToFile(base64Data: string, fileName: string, mimeType: string): F
 
 // Função para processar dados do servidor e converter base64 para File
 function processServerData(data: any) {
-  console.log("=== PROCESSING SERVER DATA ===")
-  console.log("Raw server data:", JSON.stringify(data, null, 2))
 
   const processedData = JSON.parse(JSON.stringify(data)) // Deep clone
 
   // Processar arquivos do perfil
   if (data.profile) {
-    console.log("=== PROCESSING PROFILE FILES ===")
-    console.log("Profile data:", data.profile)
 
     // Processar COF File
     if (data.profile.cofFile) {
-      console.log("COF File data:", data.profile.cofFile)
 
       // Verificar se é um objeto com dados base64
       if (typeof data.profile.cofFile === "object" && data.profile.cofFile.data) {
-        console.log("Converting COF file from base64 object...")
         const convertedFile = base64ToFile(
           data.profile.cofFile.data,
           data.profile.cofFile.name,
@@ -152,7 +137,6 @@ function processServerData(data: any) {
 
         if (convertedFile) {
           processedData.profile.cofFile = convertedFile
-          console.log("COF file converted successfully:", convertedFile)
         } else {
           console.error("Failed to convert COF file")
           processedData.profile.cofFile = null
@@ -160,7 +144,6 @@ function processServerData(data: any) {
       }
       // Verificar se é uma string base64 direta
       else if (typeof data.profile.cofFile === "string") {
-        console.log("Converting COF file from base64 string...")
         const convertedFile = base64ToFile(
           data.profile.cofFile,
           "cof-document.pdf", // nome padrão
@@ -169,7 +152,6 @@ function processServerData(data: any) {
 
         if (convertedFile) {
           processedData.profile.cofFile = convertedFile
-          console.log("COF file converted successfully:", convertedFile)
         } else {
           console.error("Failed to convert COF file")
           processedData.profile.cofFile = null
@@ -181,11 +163,9 @@ function processServerData(data: any) {
 
     // Processar Presentation File
     if (data.profile.presentationFile) {
-      console.log("Presentation File data:", data.profile.presentationFile)
 
       // Verificar se é um objeto com dados base64
       if (typeof data.profile.presentationFile === "object" && data.profile.presentationFile.data) {
-        console.log("Converting presentation file from base64 object...")
         const convertedFile = base64ToFile(
           data.profile.presentationFile.data,
           data.profile.presentationFile.name,
@@ -194,7 +174,6 @@ function processServerData(data: any) {
 
         if (convertedFile) {
           processedData.profile.presentationFile = convertedFile
-          console.log("Presentation file converted successfully:", convertedFile)
         } else {
           console.error("Failed to convert presentation file")
           processedData.profile.presentationFile = null
@@ -202,7 +181,6 @@ function processServerData(data: any) {
       }
       // Verificar se é uma string base64 direta
       else if (typeof data.profile.presentationFile === "string") {
-        console.log("Converting presentation file from base64 string...")
         const convertedFile = base64ToFile(
           data.profile.presentationFile,
           "presentation.pdf", // nome padrão
@@ -211,7 +189,6 @@ function processServerData(data: any) {
 
         if (convertedFile) {
           processedData.profile.presentationFile = convertedFile
-          console.log("Presentation file converted successfully:", convertedFile)
         } else {
           console.error("Failed to convert presentation file")
           processedData.profile.presentationFile = null
@@ -224,22 +201,16 @@ function processServerData(data: any) {
 
   // Processar fotos dos modelos de loja
   if (data.storeModels && Array.isArray(data.storeModels)) {
-    console.log("=== PROCESSING STORE MODELS ===")
-    console.log("Store models data:", data.storeModels)
 
     processedData.storeModels = data.storeModels.map((model, index) => {
-      console.log(`Processing model ${index}:`, model)
 
       if (model.foto) {
-        console.log(`Model ${index} foto data:`, model.foto)
 
         // Verificar se é um objeto com dados base64
         if (typeof model.foto === "object" && model.foto.data) {
-          console.log(`Converting foto for model ${index} from object...`)
           const convertedFile = base64ToFile(model.foto.data, model.foto.name, model.foto.type)
 
           if (convertedFile) {
-            console.log(`Model ${index} foto converted successfully:`, convertedFile)
             return { ...model, foto: convertedFile }
           } else {
             console.error(`Failed to convert foto for model ${index}`)
@@ -248,7 +219,6 @@ function processServerData(data: any) {
         }
         // Verificar se é uma string base64 direta
         else if (typeof model.foto === "string") {
-          console.log(`Converting foto for model ${index} from string...`)
           const convertedFile = base64ToFile(
             model.foto,
             `model-${index}-photo.jpg`, // nome padrão
@@ -256,7 +226,6 @@ function processServerData(data: any) {
           )
 
           if (convertedFile) {
-            console.log(`Model ${index} foto converted successfully:`, convertedFile)
             return { ...model, foto: convertedFile }
           } else {
             console.error(`Failed to convert foto for model ${index}`)
@@ -271,17 +240,12 @@ function processServerData(data: any) {
     })
   }
 
-  console.log("=== FINAL PROCESSED DATA ===")
-  console.log("Processed data:", processedData)
-
   return processedData
 }
 
 export function FranchiseOnboardingForm({ initialData }) {
   const [currentStep, setCurrentStep] = useState(0)
   const [formData, setFormData] = useState(() => {
-    console.log("=== INITIALIZING FORM DATA ===")
-    console.log("Initial data received:", initialData)
 
     const webhookData = {
       ...(initialData.data || {}),
@@ -292,32 +256,13 @@ export function FranchiseOnboardingForm({ initialData }) {
       },
     }
 
-    console.log("Webhook data before processing:", webhookData)
 
     // Processar dados do servidor (converter base64 para File se necessário)
     const processedWebhookData = processServerData(webhookData)
 
-    console.log("Processed webhook data:", processedWebhookData)
 
     const templateCopy = JSON.parse(JSON.stringify(initialFormDataTemplate))
     const finalData = mergeDeep(templateCopy, processedWebhookData)
-
-    console.log("=== FINAL FORM DATA ===")
-    console.log("Final form data:", finalData)
-
-    // Log específico dos arquivos
-    if (finalData.profile) {
-      console.log("Profile files in final data:")
-      console.log("- COF File:", finalData.profile.cofFile)
-      console.log("- Presentation File:", finalData.profile.presentationFile)
-    }
-
-    if (finalData.storeModels) {
-      console.log("Store models in final data:")
-      finalData.storeModels.forEach((model, index) => {
-        console.log(`- Model ${index} foto:`, model.foto)
-      })
-    }
 
     return finalData
   })
@@ -331,26 +276,6 @@ export function FranchiseOnboardingForm({ initialData }) {
   useEffect(() => {
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
   }, [currentStep])
-
-  // Debug: Log form data changes
-  useEffect(() => {
-    console.log("=== FORM DATA UPDATED ===")
-    console.log("Current form data:", formData)
-
-    // Log específico dos arquivos quando o form data muda
-    if (formData.profile) {
-      console.log("Current profile files:")
-      console.log("- COF File:", formData.profile.cofFile)
-      console.log("- Presentation File:", formData.profile.presentationFile)
-    }
-
-    if (formData.storeModels) {
-      console.log("Current store models:")
-      formData.storeModels.forEach((model, index) => {
-        console.log(`- Model ${index} foto:`, model.foto)
-      })
-    }
-  }, [formData])
 
   const validateStep = (step: number) => {
     const missingFields = []
@@ -471,11 +396,8 @@ export function FranchiseOnboardingForm({ initialData }) {
   }
 
   const updateFormData = (data: any) => {
-    console.log("=== UPDATING FORM DATA ===")
-    console.log("Update data received:", data)
     setFormData((prev) => {
       const newData = { ...prev, ...data }
-      console.log("New form data after update:", newData)
       return newData
     })
   }

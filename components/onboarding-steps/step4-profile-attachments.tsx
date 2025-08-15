@@ -10,13 +10,21 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { useMobile } from "@/hooks/use-mobile"
 
+type SerializableFile = {
+  name: string
+  type: string
+  size?: number
+  data: string // base64 (sem prefixo data:)
+}
+
 const FileInput = ({ label, name, onChange, fileName, existingFile, required = false }) => {
-  console.log(`FileInput ${name}:`, { fileName, existingFile, required })
 
   // Função para fazer download do arquivo existente
   const handleDownload = () => {
-    if (existingFile && existingFile instanceof File) {
-      console.log(`Downloading file: ${existingFile.name}`)
+    if (!existingFile) return
+
+    // Caso seja File nativo
+    if (existingFile instanceof File) {
       const url = URL.createObjectURL(existingFile)
       const a = document.createElement("a")
       a.href = url
@@ -25,15 +33,26 @@ const FileInput = ({ label, name, onChange, fileName, existingFile, required = f
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
+      return
+    }
+
+    // Caso seja objeto serializável { data }
+    if (existingFile?.data) {
+      const mime = existingFile.type || "application/octet-stream"
+      const a = document.createElement("a")
+      a.href = `data:${mime};base64,${existingFile.data}`
+      a.download = existingFile.name || "arquivo"
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
     }
   }
 
   // Função para remover arquivo
   const handleRemove = () => {
-    console.log(`Removing file: ${name}`)
     const fakeEvent = {
       target: {
-        name: name,
+        name,
         files: [],
         type: "file",
       },
@@ -42,34 +61,28 @@ const FileInput = ({ label, name, onChange, fileName, existingFile, required = f
   }
 
   // Função para obter o ícone baseado no tipo de arquivo
-  const getFileIcon = (file) => {
-    if (!file || !file.name) return FileText
-
-    try {
-      const extension = file.name.split(".").pop()?.toLowerCase()
-      switch (extension) {
-        case "pdf":
-          return FileText
-        case "docx":
-        case "doc":
-          return FileText
-        case "pptx":
-        case "ppt":
-          return FileText
-        default:
-          return FileText
-      }
-    } catch (error) {
-      console.warn("Error getting file icon:", error)
-      return FileText
+  const getFileIcon = (fileLike: any) => {
+    const name = fileLike?.name as string | undefined
+    if (!name) return FileText
+    const ext = name.split(".").pop()?.toLowerCase()
+    switch (ext) {
+      case "pdf":
+      case "doc":
+      case "docx":
+      case "ppt":
+      case "pptx":
+      default:
+        return FileText
     }
   }
 
-  const FileIcon = getFileIcon(existingFile)
+  const hasExistingFile =
+    !!existingFile && (existingFile instanceof File || typeof existingFile?.data === "string")
+  const displayedName = (existingFile?.name as string) || fileName || "arquivo"
+  const displayedSizeMB =
+    existingFile?.size ? (existingFile.size / 1024 / 1024).toFixed(2) + " MB" : ""
 
-  // Verificar se existe arquivo
-  const hasExistingFile = existingFile && existingFile instanceof File
-  console.log(`${name} has existing file:`, hasExistingFile)
+  const FileIcon = getFileIcon(existingFile)
 
   return (
     <div>
@@ -217,18 +230,68 @@ const ExperienceSelect = ({ label, name, value, onValueChange, icon: Icon, optio
 }
 
 export function Step4ProfileAttachments({ data, update }) {
-  console.log("Step4ProfileAttachments data:", data)
+  const fileToBase64Client = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const result = reader.result as string
+        resolve(result.split(",")[1]) // remove "data:mime/type;base64,"
+      }
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null
+    const field = e.target.name
 
-  const handleSelectChange = (name, value) => {
-    console.log(`Select change: ${name} = ${value}`)
-    update({ profile: { ...data, [name]: value } })
+    if (!file) {
+      update({ profile: { ...data, [field]: null } })
+      return
+    }
+
+    // Validações
+    const max = 10 * 1024 * 1024 // 10MB
+    if (file.size > max) {
+      alert(`Arquivo maior que 10MB (${(file.size / 1024 / 1024).toFixed(2)}MB).`)
+      e.target.value = ""
+      return
+    }
+
+    const allowed = new Set([
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.ms-powerpoint",
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    ])
+    if (!allowed.has(file.type)) {
+      alert("Tipos permitidos: PDF, DOC/DOCX, PPT/PPTX.")
+      e.target.value = ""
+      return
+    }
+
+    try {
+      const base64 = await fileToBase64Client(file)
+      update({
+        profile: {
+          ...data,
+          [field]: {
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            data: base64, // base64 sem prefixo
+          } as SerializableFile,
+        },
+      })
+    } catch (err) {
+      console.error("Falha ao ler arquivo no client:", err)
+      alert("Não foi possível processar o arquivo. Tente novamente.")
+      e.target.value = ""
+    }
   }
 
-  const handleFileChange = (e) => {
-    console.log("File change event:", e.target.name, e.target.files)
-    const file = e.target.files?.[0] || null
-    console.log("Selected file:", file)
-    update({ profile: { ...data, [e.target.name]: file } })
+  const handleSelectChange = (name, value) => {
+    update({ profile: { ...data, [name]: value } })
   }
 
   const experienceOptions = {

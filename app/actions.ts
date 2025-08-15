@@ -102,7 +102,6 @@ export async function redirectToMatch() {
   const redirectUrl = "https://match.franquia.com.br/login/"
   
   // Log para debugging
-  console.log("Redirecting to:", redirectUrl)
   
   // No servidor, podemos usar redirect do Next.js
   // No frontend, usamos window.location.href

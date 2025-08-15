@@ -170,18 +170,6 @@ export async function saveOnboardingStep(payload: {
       requestBody.status = status
     }
 
-    console.log(
-      "Sending step data:",
-      JSON.stringify(
-        {
-          ...requestBody,
-          data: step === 3 || step === 4 ? "... (dados com arquivos processados)" : requestBody.data,
-        },
-        null,
-        2,
-      ),
-    )
-
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 segundos timeout para uploads
 
@@ -244,7 +232,6 @@ export async function saveOnboardingStep(payload: {
 }
 
 export async function submitOnboardingForm(formData: any): Promise<ApiResponse> {
-  console.log("Received Onboarding Data:", JSON.stringify(formData, null, 2))
 
   // Here you would perform comprehensive validation and data processing
   // For example, check if CNPJ already exists, validate all required fields, etc.

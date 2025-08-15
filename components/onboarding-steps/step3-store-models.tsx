@@ -42,25 +42,52 @@ const newModelTemplate = {
 }
 
 const FileInput = ({ name, onChange, fileName, existingFile }) => {
-  const [imageUrl, setImageUrl] = useState(null)
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [showPreview, setShowPreview] = useState(false)
+
+  const fileToBase64Client = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const result = reader.result as string
+        const base64 = result.split(",")[1] // remove "data:mime/type;base64,"
+        resolve(base64)
+      }
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
 
   // Criar URL da imagem quando existir um arquivo
   React.useEffect(() => {
-    if (existingFile && existingFile instanceof File) {
+    if (!existingFile) {
+      setImageUrl(null)
+      return
+    }
+
+    // Caso 1: ainda é um File (não convertido)
+    if (existingFile instanceof File) {
       const url = URL.createObjectURL(existingFile)
       setImageUrl(url)
-
-      // Cleanup da URL quando o componente for desmontado
       return () => URL.revokeObjectURL(url)
-    } else {
-      setImageUrl(null)
     }
+
+    // Caso 2: já é o objeto { name, type, size, data } (base64 sem prefixo)
+    if (existingFile?.data) {
+      const mime = existingFile.type || "image/*"
+      const url = `data:${mime};base64,${existingFile.data}`
+      setImageUrl(url)
+      return
+    }
+
+    setImageUrl(null)
   }, [existingFile])
 
   // Função para fazer download da foto existente
   const handleDownload = () => {
-    if (existingFile && existingFile instanceof File) {
+    if (!existingFile) return
+
+    // Se for File
+    if (existingFile instanceof File) {
       const url = URL.createObjectURL(existingFile)
       const a = document.createElement("a")
       a.href = url
@@ -69,15 +96,26 @@ const FileInput = ({ name, onChange, fileName, existingFile }) => {
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
+      return
+    }
+
+    // Se for objeto { data (base64) }
+    if (existingFile?.data) {
+      const mime = existingFile.type || "image/*"
+      const a = document.createElement("a")
+      a.href = `data:${mime};base64,${existingFile.data}`
+      a.download = existingFile.name || "foto"
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
     }
   }
 
   // Função para remover a foto
   const handleRemove = () => {
-    // Simular um evento de mudança com arquivo vazio
     const fakeEvent = {
       target: {
-        name: name,
+        name,
         files: [],
         type: "file",
       },
@@ -86,31 +124,53 @@ const FileInput = ({ name, onChange, fileName, existingFile }) => {
   }
 
   // Função para validar o arquivo antes de aceitar
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0]
-
-    if (file) {
-      // Verificar tamanho do arquivo (1.5MB = 1.5 * 1024 * 1024 bytes)
-      const maxSize = 1.5 * 1024 * 1024 // 1.5MB em bytes
-
-      if (file.size > maxSize) {
-        alert(`A imagem deve ter no máximo 1.5MB. O arquivo selecionado tem ${(file.size / 1024 / 1024).toFixed(2)}MB.`)
-        // Limpar o input
-        e.target.value = ""
-        return
-      }
-
-      // Verificar tipo do arquivo
-      const allowedTypes = ["image/jpeg", "image/jpg", "image/png"]
-      if (!allowedTypes.includes(file.type)) {
-        alert("Por favor, selecione apenas arquivos PNG ou JPG.")
-        e.target.value = ""
-        return
-      }
+  const handleFileChange = async (e) => {
+    const file: File | undefined = e.target.files?.[0]
+    if (!file) {
+      onChange(e)
+      return
     }
 
-    // Se passou nas validações, chamar o onChange original
-    onChange(e)
+    // Tamanho máx: 1.5 MB
+    const maxSize = 1.5 * 1024 * 1024
+    if (file.size > maxSize) {
+      alert(`A imagem deve ter no máximo 1.5MB. O arquivo selecionado tem ${(file.size / 1024 / 1024).toFixed(2)}MB.`)
+      e.target.value = ""
+      return
+    }
+
+    // Tipos permitidos
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png"]
+    if (!allowedTypes.includes(file.type)) {
+      alert("Por favor, selecione apenas arquivos PNG ou JPG.")
+      e.target.value = ""
+      return
+    }
+
+    try {
+      // Converte no browser e envia para o pai já como OBJETO (não-File)
+      const base64 = await fileToBase64Client(file)
+      const fakeEvent = {
+        target: {
+          name,
+          type: "file",
+          // importante: passa um array com 1 "arquivo" que na verdade é o objeto serializável
+          files: [
+            {
+              name: file.name,
+              type: file.type,
+              size: file.size,
+              data: base64, // base64 sem prefixo
+            },
+          ],
+        },
+      }
+      onChange(fakeEvent)
+    } catch (err) {
+      console.error("Erro ao ler arquivo no client:", err)
+      alert("Não foi possível processar a imagem. Tente novamente.")
+      e.target.value = ""
+    }
   }
 
   return (
@@ -261,11 +321,11 @@ const StoreModelCard = ({ model, index, handleModelChange, handleSelectChange, r
             <SelectValue placeholder="Selecione o tipo" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="loja-fisica">Loja Física</SelectItem>
-            <SelectItem value="quiosque">Quiosque</SelectItem>
+            <SelectItem value="loja">Loja Física</SelectItem>
             <SelectItem value="home-based">Home-based</SelectItem>
-            <SelectItem value="food-truck">Food Truck</SelectItem>
-            <SelectItem value="container">Container</SelectItem>
+            <SelectItem value="escritorio">Escritório</SelectItem>
+            <SelectItem value="quiosque">Quiosque</SelectItem>
+            <SelectItem value="outros">Outros</SelectItem>
           </SelectContent>
         </Select>
       </div>
